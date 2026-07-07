@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Book - Library - Management System {% endblock %}
+
+{% block page_title %}Modify Book Details{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10 col-xl-8">
+    <div class="card-glass p-4 mb-4">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <a href="{{ url_for('main.books') }}" class="btn btn-sm btn-light rounded-circle p-2" style="width:36px; height:36px;"><i class="fas fa-arrow-left"></i></a>
+        <h5 class="fw-bold m-0"><i class="fas fa-edit me-2 text-primary"></i>Modify details for: {{ book.title }}</h5>
+      </div>
+      <p class="text-muted m-0 ms-5" style="font-size:0.875rem;">Modify book metadata or adjust available copies in inventory.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card-glass p-3 text-center">
+          <img src="{{ url_for('static', filename='images/' + book.image) }}" class="img-fluid rounded-4 shadow-sm mb-3" style="max-height: 280px; object-fit: cover;" alt="cover">
+          <h6 class="fw-bold text-truncate">{{ book.title }}</h6>
+          <small class="text-muted">by {{ book.author }}</small>
+        </div>
+      </div>
+      
+      <div class="col-md-8">
+        <div class="card-glass p-4">
+          <form method="POST" action="{{ url_for('main.edit_book', book_id=book.id) }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="row g-3">
+              <!-- Title -->
+              <div class="col-md-6">
+                {{ form.title.label(class_='form-label fw-bold') }}
+                {{ form.title(class_='form-control rounded-3') }}
+                {% for error in form.title.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Author -->
+              <div class="col-md-6">
+                {{ form.author.label(class_='form-label fw-bold') }}
+                {{ form.author(class_='form-control rounded-3') }}
+                {% for error in form.author.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- ISBN -->
+              <div class="col-md-6">
+                {{ form.isbn.label(class_='form-label fw-bold') }}
+                {{ form.isbn(class_='form-control rounded-3') }}
+                {% for error in form.isbn.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Publisher -->
+              <div class="col-md-6">
+                {{ form.publisher.label(class_='form-label fw-bold') }}
+                {{ form.publisher(class_='form-control rounded-3') }}
+                {% for error in form.publisher.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Category -->
+              <div class="col-md-6">
+                {{ form.category.label(class_='form-label fw-bold') }}
+                {{ form.category(class_='form-select rounded-3') }}
+                {% for error in form.category.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Language -->
+              <div class="col-md-6">
+                {{ form.language.label(class_='form-label fw-bold') }}
+                {{ form.language(class_='form-control rounded-3') }}
+                {% for error in form.language.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Edition -->
+              <div class="col-md-4">
+                {{ form.edition.label(class_='form-label fw-bold') }}
+                {{ form.edition(class_='form-control rounded-3') }}
+                {% for error in form.edition.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Total Copies -->
+              <div class="col-md-4">
+                {{ form.total_copies.label(class_='form-label fw-bold') }}
+                {{ form.total_copies(class_='form-control rounded-3') }}
+                {% for error in form.total_copies.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Shelf Number -->
+              <div class="col-md-4">
+                {{ form.shelf_number.label(class_='form-label fw-bold') }}
+                {{ form.shelf_number(class_='form-control rounded-3') }}
+                {% for error in form.shelf_number.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Cover Image -->
+              <div class="col-12">
+                {{ form.image.label(class_='form-label fw-bold') }}
+                {{ form.image(class_='form-control rounded-3') }}
+                <small class="text-muted d-block mt-1">Leave blank to retain the current cover page.</small>
+                {% for error in form.image.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+              
+              <!-- Description -->
+              <div class="col-12">
+                {{ form.description.label(class_='form-label fw-bold') }}
+                {{ form.description(class_='form-control rounded-3', rows=4) }}
+                {% for error in form.description.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary bg-primary-grad border-0 rounded-pill py-2.5">
+                <i class="fas fa-check-circle me-1"></i>Update Book details
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

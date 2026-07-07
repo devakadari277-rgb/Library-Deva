@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Issues Ledger - Library - Management System{% endblock %}
+
+{% block page_title %}
+  {% if student %}
+    Borrowing History: {{ student.full_name }}
+  {% else %}
+    Global Issues Ledger
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card-glass p-4 mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <h5 class="fw-bold m-0">
+      <i class="fas fa-history me-2 text-primary"></i>
+      {% if student %}
+        Student Roll: {{ student.roll_number }}
+      {% else %}
+        Complete Library Transactions & Issues
+      {% endif %}
+    </h5>
+    
+    {% if current_user.is_admin and not student %}
+      <a href="{{ url_for('main.issue_book') }}" class="btn btn-primary rounded-pill bg-primary-grad border-0 px-4">
+        <i class="fas fa-plus-circle me-1"></i>Issue Book (Manual)
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card-glass p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Book</th>
+          <th>Borrower</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Return Date</th>
+          <th>Fines</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in issues %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <img src="{{ url_for('static', filename='images/' + issue.book.image) }}" class="book-cover-img" alt="cover">
+                <div>
+                  <div class="fw-bold text-dark">{{ issue.book.title }}</div>
+                  <small class="text-secondary font-monospace" style="font-size:0.75rem;">Copy: {{ issue.copy.copy_number }}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="fw-bold text-dark">{{ issue.student.full_name }}</div>
+              <small class="text-secondary font-monospace" style="font-size:0.75rem;">Roll: {{ issue.student.roll_number }}</small>
+            </td>
+            <td style="font-size: 0.85rem;" class="text-muted">{{ issue.issue_date.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if issue.status == 'Issued' and issue.due_date < datetime.utcnow() %}
+                <span class="badge badge-status badge-overdue">{{ issue.due_date.strftime('%Y-%m-%d') }} (Overdue)</span>
+              {% else %}
+                <span class="badge badge-status badge-issued">{{ issue.due_date.strftime('%Y-%m-%d') }}</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.85rem;" class="text-muted">
+              {% if issue.return_date %}
+                {{ issue.return_date.strftime('%Y-%m-%d') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if issue.fine_amount > 0 %}
+                <span class="text-danger fw-bold">₹{{ "%.2f" | format(issue.fine_amount) }}</span>
+                {% set fine_rec = issue.fines | first %}
+                {% if fine_rec and fine_rec.status == 'Paid' %}
+                  <span class="badge bg-success bg-opacity-10 text-success ms-1" style="font-size: 0.65rem;">Paid</span>
+                {% else %}
+                  <span class="badge bg-danger bg-opacity-10 text-danger ms-1" style="font-size: 0.65rem;">Unpaid</span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">₹0.00</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if issue.status == 'Returned' %}
+                <span class="badge badge-status badge-returned">Returned</span>
+              {% elif issue.status == 'Exchanged' %}
+                <span class="badge badge-status badge-rejected">Exchanged</span>
+              {% elif issue.due_date < datetime.utcnow() %}
+                <span class="badge badge-status badge-overdue">Overdue</span>
+              {% else %}
+                <span class="badge badge-status badge-issued">Issued</span>
+              {% endif %}
+            </td>
+            
+            <td class="text-end">
+              {% if current_user.is_admin %}
+                {% if issue.status == 'Issued' %}
+                  <!-- Single Click Return -->
+                  <form action="{{ url_for('main.return_book', issue_id=issue.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Accept return of book copy: {{ issue.copy.copy_number }}?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                      <i class="fas fa-undo me-1"></i>Return Book
+                    </button>
+                  </form>
+                {% else %}
+                  <span class="text-muted" style="font-size: 0.8rem;"><i class="fas fa-check-circle me-1 text-success"></i>Completed</span>
+                {% endif %}
+              {% else %}
+                <!-- Student Actions -->
+                {% if issue.status == 'Issued' %}
+                  <div class="d-flex justify-content-end gap-2">
+                    <form action="{{ url_for('main.student_request_renew', issue_id=issue.id) }}" method="POST" class="d-inline">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill"><i class="fas fa-sync-alt me-1"></i>Renew</button>
+                    </form>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="openExchangeModal({{ issue.id }}, '{{ issue.book.title }}')">
+                      <i class="fas fa-exchange-alt me-1"></i>Exchange
+                    </button>
+                  </div>
+                {% else %}
+                  <span class="text-muted" style="font-size: 0.8rem;">Completed</span>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">No issue transactions found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Exchange Modal for Students (If logged in as student) -->
+{% if not current_user.is_admin %}
+  <div class="modal fade" id="exchangeModal" tabindex="-1" aria-labelledby="exchangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-glass border-0" style="background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(20px);">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="exchangeModalLabel">Request Book Exchange</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form action="{{ url_for('main.request_exchange') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="issued_book_id" id="modal_issued_book_id">
+          <div class="modal-body border-0">
+            <p>You are requesting to exchange your issued book: <strong id="modal_issued_book_title"></strong></p>
+            
+            <div class="mb-3">
+              <label for="new_book_id" class="form-label fw-bold">Select Book to Borrow in Exchange:</label>
+              <select name="new_book_id" id="new_book_id" class="form-select rounded-3" required>
+                <option value="">Select a book from catalog...</option>
+              </select>
+            </div>
+            
+            <div class="alert alert-info py-2" style="font-size:0.85rem;">
+              <i class="fas fa-info-circle me-1"></i>Exchanging a book will return the current copy and issue the new one automatically once approved by the Admin.
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary rounded-pill bg-primary-grad border-0 px-4">Submit Request</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if not current_user.is_admin %}
+<script>
+  async function openExchangeModal(issuedBookId, bookTitle) {
+    document.getElementById('modal_issued_book_id').value = issuedBookId;
+    document.getElementById('modal_issued_book_title').innerText = bookTitle;
+    
+    const select = document.getElementById('new_book_id');
+    select.innerHTML = '<option value="">Select a book from catalog...</option>';
+    
+    try {
+      const apiRes = await fetch('/api/books/available');
+      const booksData = await apiRes.json();
+      if (booksData.success) {
+        booksData.books.forEach(b => {
+          if (b.title !== bookTitle) {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.innerText = `${b.title} by ${b.author} (Shelf: ${b.shelf})`;
+            select.appendChild(opt);
+          }
+        });
+      }
+      
+      const modal = new bootstrap.Modal(document.getElementById('exchangeModal'));
+      modal.show();
+    } catch (e) {
+      console.error(e);
+      alert("Error loading exchangeable books.");
+    }
+  }
+</script>
+{% endif %}
+{% endblock %}

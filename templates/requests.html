@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Requests - Library - Management System{% endblock %}
+
+{% block page_title %}Student Requests Queue{% endblock %}
+
+{% block content %}
+<div class="card-glass p-4 mb-4">
+  <h5 class="fw-bold m-0"><i class="fas fa-tasks me-2 text-primary"></i>Pending and Recent Request Queue</h5>
+</div>
+
+<div class="card-glass p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Requested Book</th>
+          <th>Request Type</th>
+          <th>Details/Notes</th>
+          <th>Status</th>
+          <th>Requested On</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>
+            <div class="fw-bold text-dark">{{ req.student.full_name }}</div>
+            <small class="text-muted"><i class="fas fa-id-card me-1"></i>Roll: {{ req.student.roll_number }}</small>
+          </td>
+          <td>
+            <div class="fw-bold text-dark">{{ req.book.title }}</div>
+            <small class="text-muted">by {{ req.book.author }}</small>
+          </td>
+          <td>
+            {% if req.request_type == 'Issue' %}
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold">Issue
+              Request</span>
+            {% elif req.request_type == 'Renew' %}
+            <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-bold">Renew Request</span>
+            {% elif req.request_type == 'Exchange' %}
+            <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill fw-bold">Exchange
+              Request</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if req.message %}
+            {% if req.message.startswith('exchange_issue_id:') %}
+            <span class="text-secondary" style="font-size:0.9rem;">Exchanging an issued book copy</span>
+            {% elif req.message.startswith('renew_issue_id:') %}
+            <span class="text-secondary" style="font-size:0.9rem;">Renewing active copy issue</span>
+            {% else %}
+            <span class="text-secondary" style="font-size:0.9rem;">{{ req.message }}</span>
+            {% endif %}
+            {% else %}
+            <span class="text-muted" style="font-size:0.9rem;">-</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if req.status == 'Pending' %}
+            <span class="badge badge-status badge-pending">Pending</span>
+            {% elif req.status == 'Approved' %}
+            <span class="badge badge-status badge-returned">Approved</span>
+            {% else %}
+            <span class="badge badge-status badge-rejected">Rejected</span>
+            {% endif %}
+          </td>
+          <td style="font-size: 0.85rem;" class="text-muted">{{ req.requested_date.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="text-end">
+            {% if req.status == 'Pending' %}
+            <div class="d-flex justify-content-end gap-2">
+              <!-- Approve Trigger Button -->
+              <button type="button" class="btn btn-sm btn-success rounded-pill px-3"
+                onclick="openApproveModal({{ req.id }}, '{{ req.student.full_name | replace("'", "\\'") }}', '{{ req.book.title | replace("'", "\\'") }}')">
+                <i class="fas fa-check me-1"></i>Approve
+              </button>
+
+              <!-- Reject Button -->
+              <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                onclick="openRejectModal({{ req.id }}, '{{ req.student.full_name | replace("'", "\\'") }}', '{{ req.book.title | replace("'", "\\'") }}')">
+                <i class="fas fa-times me-1"></i>Reject
+              </button>
+            </div>
+            {% else %}
+            <span class="text-muted" style="font-size:0.85rem;">Processed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">No requests found in queue.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Approve Duration Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-glass border-0"
+      style="background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(20px);">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold" id="approveModalLabel">Approve & Issue Book</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="approveForm" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body border-0">
+          <p>Approving request from <strong id="approve_student_name"></strong> for book: <strong
+              id="approve_book_title"></strong></p>
+          <div class="mb-3">
+            <label for="duration" class="form-label fw-bold">Borrow Duration (Days):</label>
+            <input type="number" name="duration" id="duration" class="form-control rounded-3" value="14" min="1"
+              max="90" required>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success rounded-pill px-4">Approve & Issue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Reason Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-glass border-0"
+      style="background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(20px);">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold" id="rejectModalLabel">Reject Student Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="rejectForm" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body border-0">
+          <p>Rejecting request from <strong id="reject_student_name"></strong> for book: <strong
+              id="reject_book_title"></strong></p>
+          <div class="mb-3">
+            <label for="reason" class="form-label fw-bold">Reason for Rejection:</label>
+            <textarea name="reason" id="reason" rows="3" class="form-control rounded-3"
+              placeholder="Enter reason (e.g. library quota exceeded, fines outstanding...)" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger rounded-pill px-4">Reject Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openApproveModal(reqId, studentName, bookTitle) {
+    document.getElementById('approve_student_name').innerText = studentName;
+    document.getElementById('approve_book_title').innerText = bookTitle;
+    document.getElementById('approveForm').action = "/requests/" + reqId + "/approve";
+
+    const modal = new bootstrap.Modal(document.getElementById('approveModal'));
+    modal.show();
+  }
+
+  function openRejectModal(reqId, studentName, bookTitle) {
+    document.getElementById('reject_student_name').innerText = studentName;
+    document.getElementById('reject_book_title').innerText = bookTitle;
+    document.getElementById('rejectForm').action = "/requests/" + reqId + "/reject";
+
+    const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    modal.show();
+  }
+</script>
+{% endblock %}

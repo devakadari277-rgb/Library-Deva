@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/title.png') }}">
+  <title>{{ auth_type }} Login </title>
+  <!-- Google Fonts: Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #f8fafc;
+      padding: 1rem;
+    }
+
+    .login-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      max-width: 440px;
+      width: 100%;
+      padding: 2.5rem;
+    }
+
+    .form-control {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+    }
+
+    .form-control:focus {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: #6366f1;
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-label {
+      color: #94a3b8;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body class="dashboard-page">
+  <video autoplay loop muted playsinline class="bg-video">
+    <source src="{{ url_for('static', filename='images/Video Libraray.mp4') }}" type="video/mp4">
+  </video>
+  <div class="login-card">
+    <div class="text-center mb-4">
+      <div class="stat-icon bg-primary-grad mx-auto mb-3" style="width:54px; height:54px; font-size:1.5rem;">
+        <i class="fas fa-sign-in-alt"></i>
+      </div>
+      <h2 class="fw-bold mb-1">{{ auth_type }} Sign In</h2>
+      <p class="text-secondary small">Access the Library  dashboard</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' else category }} bg-opacity-10 border-0 text-white card-glass mb-4"
+      role="alert">
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST"
+      action="{{ url_for('main.student_login') if auth_type == 'Student' else url_for('main.admin_login') }}">
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        {{ form.email.label(class_='form-label') }}
+        {{ form.email(class_='form-control', placeholder='Enter registered email') }}
+        {% for error in form.email.errors %}
+        <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.password.label(class_='form-label') }}
+        {{ form.password(class_='form-control', placeholder='Enter password') }}
+        {% for error in form.password.errors %}
+        <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3 form-check d-flex justify-content-between align-items-center">
+        <div>
+          {{ form.remember(class_='form-check-input') }}
+          {{ form.remember.label(class_='form-check-label text-secondary small') }}
+        </div>
+      </div>
+
+      <div class="d-grid mt-4">
+        {{ form.submit(class_='btn btn-primary btn-lg bg-primary-grad border-0 rounded-pill py-2.5') }}
+      </div>
+    </form>
+
+    <div class="mt-4 text-center">
+      {% if auth_type == 'Student' %}
+      <small class="text-secondary">Not registered yet? <a href="{{ url_for('main.student_register') }}"
+          class="text-info">Register Account</a></small><br>
+      <small class="text-secondary">Are you an Admin? <a href="{{ url_for('main.admin_login') }}"
+          class="text-info">Admin Login</a></small>
+      {% else %}
+      <small class="text-secondary">Need a student account? <a href="{{ url_for('main.student_login') }}"
+          class="text-info">Student Login</a></small><br>
+      <small class="text-secondary">First Admin? <a href="{{ url_for('main.admin_register') }}"
+          class="text-info">Register here</a></small>
+      {% endif %}
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - Library - Management System</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Add scrollbar inside the glassmorphic form for extra fields */
+    .form-scroll {
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 8px;
+      margin-bottom: 15px;
+    }
+    .form-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .form-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body data-on="false">
+
+<div class="container">
+  <div class="lamp-wrapper">
+    <svg class="lamp-svg" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+      <ellipse class="inner-glow" cx="100" cy="110" rx="60" ry="30" />
+      <rect class="lamp-base" x="92" y="100" width="16" height="160" rx="8" />
+      <rect class="lamp-base" x="60" y="250" width="80" height="12" rx="6" />
+      <g class="pull-cord">
+        <line class="cord-line" x1="130" y1="110" x2="130" y2="180" />
+        <circle class="cord-bead" cx="130" cy="190" r="6" />
+        <circle class="cord-hit" cx="130" cy="190" r="25" fill="transparent" />
+      </g>
+      <path class="lamp-shade" d="M30 110 C 30 50, 170 50, 170 110 C 170 125, 30 125, 30 110 Z" />
+    </svg>
+  </div>
+
+  <div class="login-form">
+    <h2>Create account</h2>
+    <form id="register-form" onsubmit="return false;">
+      <div class="form-scroll">
+        <!-- Account Type Select -->
+        <div class="form-group">
+          <label>Account Type</label>
+          <select id="reg-user-type" name="user_type">
+            <option value="Student">Student</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input id="reg-fullname" name="full_name" type="text" placeholder="e.g. John Doe" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input id="reg-email" name="email" type="email" placeholder="e.g. john@library.org" required>
+        </div>
+
+        <!-- Student Dynamic Fields -->
+        <div id="student-fields-group">
+          <div class="form-group">
+            <label>Roll Number</label>
+            <input id="reg-roll" name="roll_number" type="text" placeholder="e.g. CS-2024-42">
+          </div>
+          <div class="form-group">
+            <label>Department</label>
+            <input id="reg-dept" name="department" type="text" placeholder="e.g. Computer Science">
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input id="reg-phone" name="phone" type="text" placeholder="e.g. +1234567890">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input id="reg-address" name="address" type="text" placeholder="e.g. Room 12, Block C">
+          </div>
+        </div>
+
+
+        <div class="form-group">
+          <label>Password</label>
+          <input id="reg-password" name="password" type="password" placeholder="Choose password" required>
+        </div>
+      </div>
+      
+      <button id="register-btn" class="login-btn">Register</button>
+      <p style="text-align:center;margin-top:8px;color:#ccc">Already registered? <a href="/login">Sign in</a></p>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/Draggable.min.js"></script>
+<script src="script.js"></script>
+
+<script>
+  // Hide/Show dynamic inputs in root register view
+  const userTypeSelect = document.getElementById('reg-user-type');
+  const studentGroup = document.getElementById('student-fields-group');
+
+  if (userTypeSelect) {
+    userTypeSelect.addEventListener('change', function () {
+      if (this.value === 'Admin') {
+        studentGroup.style.display = 'none';
+      } else {
+        studentGroup.style.display = 'block';
+      }
+    });
+  }
+</script>
+</body>
+</html>

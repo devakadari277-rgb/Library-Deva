@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Borrow (Issue) Requests - Library{% endblock %}
+
+{% block page_title %}Borrow Requests Log{% endblock %}
+
+{% block content %}
+<!-- Header Card -->
+<div class="card-glass p-4 mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h5 class="fw-bold m-0"><i class="fas fa-bookmark me-2 text-primary"></i>My Borrow & Issue Requests</h5>
+      <p class="text-muted m-0 mt-1" style="font-size:0.875rem;">Track all requests submitted to borrow books from the library inventory.</p>
+    </div>
+    <a href="{{ url_for('main.books') }}" class="btn btn-primary rounded-pill bg-primary-grad border-0 px-4">
+      <i class="fas fa-search me-1"></i>Search Books to Borrow
+    </a>
+  </div>
+</div>
+
+<!-- Requests Table Card -->
+<div class="card-glass p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Book Title</th>
+          <th>Author</th>
+          <th>ISBN</th>
+          <th>Request Status</th>
+          <th>Request Date</th>
+          <th>Notes / Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+          <tr>
+            <td>
+              <a href="{{ url_for('main.book_detail', book_id=req.book_id) }}" class="fw-bold text-dark text-decoration-none hover-primary">
+                {{ req.book.title }}
+              </a>
+            </td>
+            <td class="text-secondary">{{ req.book.author }}</td>
+            <td class="font-monospace text-secondary" style="font-size:0.85rem;">{{ req.book.isbn }}</td>
+            <td>
+              {% if req.status == 'Pending' %}
+                <span class="badge badge-status badge-pending">Pending Approval</span>
+              {% elif req.status == 'Approved' %}
+                <span class="badge badge-status badge-returned text-success">Approved</span>
+              {% else %}
+                <span class="badge badge-status badge-rejected text-danger">Rejected</span>
+              {% endif %}
+            </td>
+            <td class="text-muted" style="font-size:0.85rem;">{{ req.requested_date.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="text-secondary small">
+              {{ req.message or '-' }}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="fas fa-clock fa-2x mb-3 text-secondary"></i>
+              <h5>No borrow requests found.</h5>
+              <p class="m-0">Go to the Catalog to request to borrow books!</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

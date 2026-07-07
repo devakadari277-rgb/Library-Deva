@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Fines Management - Library - Management System{% endblock %}
+
+{% block page_title %}Outstanding Fines & Payments{% endblock %}
+
+{% block content %}
+<div class="card-glass p-4 mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <h5 class="fw-bold m-0"><i class="fas fa-hand-holding-usd me-2 text-primary"></i>Fines Tracking and Payment Collection</h5>
+    <!-- Charge Custom Fine Button -->
+    <button type="button" class="btn btn-primary rounded-pill bg-danger-grad border-0 px-4" data-bs-toggle="modal" data-bs-target="#chargeFineModal">
+      <i class="fas fa-exclamation-triangle me-1"></i>Charge Fine
+    </button>
+  </div>
+</div>
+
+<div class="card-glass p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Issued Book</th>
+          <th>Fine Accrued</th>
+          <th>Status</th>
+          <th>Verification / Paid Date</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fine in fines %}
+          <tr>
+            <td>
+              <div class="fw-bold text-dark">{{ fine.student.full_name }}</div>
+              <small class="text-muted"><i class="fas fa-id-card me-1"></i>Roll: {{ fine.student.roll_number }}</small>
+            </td>
+            <td>
+              <div class="fw-bold text-dark">{{ fine.issued_book.book.title }}</div>
+              <small class="text-muted">Copy Barcode: {{ fine.issued_book.copy.copy_number }}</small>
+            </td>
+            <td>
+              <span class="text-danger fw-bold fs-5">₹{{ "%.2f" | format(fine.amount) }}</span>
+            </td>
+            <td>
+              {% if fine.status == 'Paid' %}
+                <span class="badge badge-status badge-returned">Paid</span>
+              {% elif fine.status == 'Pending Payment' %}
+                <span class="badge badge-status badge-pending">Pending Verification</span>
+              {% else %}
+                <span class="badge badge-status badge-overdue">Unpaid</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.85rem;" class="text-muted">
+              {% if fine.paid_date %}
+                {{ fine.paid_date.strftime('%Y-%m-%d %H:%M') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if fine.status != 'Paid' %}
+                <form action="{{ url_for('main.collect_fine', fine_id=fine.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm payment collection of ₹{{ fine.amount }} from student {{ fine.student.full_name }}?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if fine.status == 'Pending Payment' %}
+                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                      <i class="fas fa-check-double me-1"></i>Verify Payment
+                    </button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                      <i class="fas fa-dollar-sign me-1"></i>Collect Cash
+                    </button>
+                  {% endif %}
+                </form>
+              {% else %}
+                <span class="text-muted" style="font-size: 0.85rem;"><i class="fas fa-check text-success me-1"></i>Received</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">No fine records found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Charge Fine Modal -->
+<div class="modal fade" id="chargeFineModal" tabindex="-1" aria-labelledby="chargeFineModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-glass border-0" style="background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(20px);">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold" id="chargeFineModalLabel">Charge Custom Fine</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('main.charge_fine') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body border-0">
+          <div class="mb-3">
+            <label for="issued_book_id" class="form-label fw-bold">Select Active Checkout / Student:</label>
+            <select name="issued_book_id" id="issued_book_id" class="form-select rounded-3" required>
+              <option value="">Select active issue...</option>
+              {% for issue in active_issues_for_fine %}
+                <option value="{{ issue.id }}">{{ issue.student.full_name }} (Roll: {{ issue.student.roll_number }}) - {{ issue.book.title }} [Due: {{ issue.due_date.strftime('%Y-%m-%d') }}]</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="amount" class="form-label fw-bold">Fine Amount (₹):</label>
+            <input type="number" name="amount" id="amount" step="0.01" min="0.01" class="form-control rounded-3" placeholder="e.g. 5.00" required>
+          </div>
+          <div class="mb-3">
+            <label for="reason" class="form-label fw-bold">Reason:</label>
+            <input type="text" name="reason" id="reason" class="form-control rounded-3" placeholder="e.g. Overdue return, damaged book copy" required>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger rounded-pill px-4">Charge Fine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

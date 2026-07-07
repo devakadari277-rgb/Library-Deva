@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Feedback & Suggestions - Library{% endblock %}
+
+{% block page_title %}Feedback Portal{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Feedback Submit Form -->
+  <div class="col-lg-5">
+    <div class="card-glass p-4 h-100">
+      <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-comment-dots text-primary me-2"></i>Submit Feedback</h5>
+      <p class="text-secondary small mb-4">Submit suggestions, request new book catalog titles, or report library asset damage to the administrator.</p>
+
+      <form action="{{ url_for('main.submit_feedback') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="mb-3">
+          <label for="feedback_type" class="form-label fw-bold">Feedback Type:</label>
+          <select name="feedback_type" id="feedback_type" class="form-select rounded-3" required>
+            <option value="General Suggestion">General Suggestion</option>
+            <option value="Book Suggestion">Suggest a New Book Title</option>
+            <option value="Report Damage">Report Damaged Book/Facility</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="message" class="form-label fw-bold">Detailed Message:</label>
+          <textarea name="message" id="message" rows="5" class="form-control rounded-3" placeholder="Describe your suggestion or report in detail..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary rounded-pill bg-primary-grad border-0 px-4 py-2 w-100">
+          <i class="fas fa-paper-plane me-2"></i>Send Feedback
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Past Feedback History -->
+  <div class="col-lg-7">
+    <div class="card-glass p-4 h-100">
+      <h5 class="fw-bold mb-4 text-dark"><i class="fas fa-history text-primary me-2"></i>My Submissions</h5>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Message</th>
+              <th>Submitted Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fb in feedbacks %}
+              <tr>
+                <td>
+                  <span class="badge {% if fb.feedback_type == 'Book Suggestion' %}bg-primary-grad{% elif fb.feedback_type == 'Report Damage' %}bg-danger-grad{% else %}bg-secondary-grad{% endif %} border-0 px-2 py-1 rounded-pill small">
+                    {{ fb.feedback_type }}
+                  </span>
+                </td>
+                <td class="text-secondary small text-wrap" style="max-width: 250px;">{{ fb.message }}</td>
+                <td class="text-muted" style="font-size:0.8rem;">{{ fb.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-5">No feedbacks submitted yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

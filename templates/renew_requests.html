@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Renew Books - Library{% endblock %}
+
+{% block page_title %}Renew Books Management{% endblock %}
+
+{% block content %}
+<!-- Header Card -->
+<div class="card-glass p-4 mb-4">
+  <h5 class="fw-bold m-0"><i class="fas fa-sync-alt me-2 text-primary"></i>Renew Checked Out Books</h5>
+  <p class="text-muted m-0 mt-1" style="font-size:0.875rem;">Submit renewal requests to extend the due date of your borrowed books. Renewals are approved by the Administrator.</p>
+</div>
+
+<!-- Active checkouts for renewal -->
+<div class="card-glass p-4 mb-4">
+  <h5 class="fw-bold mb-4 text-dark"><i class="fas fa-book-reader me-2 text-success"></i>My Current Borrows</h5>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Cover</th>
+          <th>Book Details</th>
+          <th>Due Date</th>
+          <th>Accumulated Fines</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in active_issues %}
+          <tr>
+            <td>
+              <img src="{{ url_for('static', filename='images/' + issue.book.image) }}" class="book-cover-img" alt="cover">
+            </td>
+            <td>
+              <div class="fw-bold">{{ issue.book.title }}</div>
+              <small class="text-muted">by {{ issue.book.author }} | Copy: {{ issue.copy.copy_number }}</small>
+            </td>
+            <td>
+              {% if issue.due_date < datetime.utcnow() %}
+                <span class="badge badge-status badge-overdue">{{ issue.due_date.strftime('%Y-%m-%d') }} (Overdue)</span>
+              {% else %}
+                <span class="badge badge-status badge-issued">{{ issue.due_date.strftime('%Y-%m-%d') }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if issue.fine_amount > 0 %}
+                <span class="text-danger fw-bold">₹{{ "%.2f" | format(issue.fine_amount) }}</span>
+              {% else %}
+                <span class="text-muted">₹0.00</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <!-- Renew Button Form -->
+              <form action="{{ url_for('main.student_request_renew', issue_id=issue.id) }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="fas fa-sync-alt me-1"></i>Request Renewal</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">No books currently checked out.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Renew requests status list -->
+<div class="card-glass p-4">
+  <h5 class="fw-bold mb-4 text-dark"><i class="fas fa-tasks me-2 text-warning"></i>Renewal Requests Queue</h5>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Book Title</th>
+          <th>Request Type</th>
+          <th>Status</th>
+          <th>Requested Date</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+          <tr>
+            <td class="fw-bold text-dark">{{ req.book.title }}</td>
+            <td><span class="badge bg-info bg-opacity-10 text-info px-3 py-1 rounded-pill fw-bold">Renewal</span></td>
+            <td>
+              {% if req.status == 'Pending' %}
+                <span class="badge badge-status badge-pending">Pending Approval</span>
+              {% elif req.status == 'Approved' %}
+                <span class="badge badge-status badge-returned text-success">Approved</span>
+              {% else %}
+                <span class="badge badge-status badge-rejected text-danger">Rejected</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 0.85rem;" class="text-muted">{{ req.requested_date.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="text-secondary small">{{ req.message or '-' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">No renewal requests found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

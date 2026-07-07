@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/title.png') }}">
+  <title>{% block title %}Library - Management System {% endblock %}</title>
+  <!-- Google Fonts: Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+  <input type="hidden" name="csrf_token" id="csrf_token_raw" value="{{ csrf_token() if csrf_token else '' }}">
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body class="dashboard-page">
+  <video autoplay loop muted playsinline class="bg-video">
+    <source src="{{ url_for('static', filename='images/Video Libraray.mp4') }}" type="video/mp4">
+  </video>
+  <div class="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <i class="fas fa-book-open"></i>
+        <span> Dev's Library - Management System</span>
+      </div>
+
+      <ul class="sidebar-menu">
+        {% if current_user.is_authenticated %}
+        {% if current_user.is_admin %}
+        <!-- Admin Navigation -->
+        <li class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+          <a href="{{ url_for('main.dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a>
+        </li>
+        <li class="{% if request.endpoint in ['main.books', 'main.add_book', 'main.edit_book'] %}active{% endif %}">
+          <a href="{{ url_for('main.books') }}"><i class="fas fa-book"></i> Books & Inventory</a>
+        </li>
+        <li
+          class="{% if request.endpoint in ['main.students_view', 'main.add_student', 'main.edit_student', 'main.student_history'] %}active{% endif %}">
+          <a href="{{ url_for('main.students_view') }}"><i class="fas fa-user-graduate"></i> Students</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.admin_requests' %}active{% endif %}">
+          <a href="{{ url_for('main.admin_requests') }}">
+            <i class="fas fa-envelope-open-text"></i> Requests
+            <span id="sidebar-badge-requests" class="badge bg-danger-grad ms-auto"
+              style="font-size: 0.7rem; display: none;">0</span>
+          </a>
+        </li>
+        <li class="{% if request.endpoint == 'main.fines_view' %}active{% endif %}">
+          <a href="{{ url_for('main.fines_view') }}"><i class="fas fa-hand-holding-usd"></i> Fine's</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.history' and not student_id %}active{% endif %}">
+          <a href="{{ url_for('main.history') }}"><i class="fas fa-history"></i> Issues History</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.logs_view' %}active{% endif %}">
+          <a href="{{ url_for('main.logs_view') }}"><i class="fas fa-terminal"></i> System Logs</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.reports_view' %}active{% endif %}">
+          <a href="{{ url_for('main.reports_view') }}"><i class="fas fa-file-invoice"></i> Reports</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.admin_feedback_view' %}active{% endif %}">
+          <a href="{{ url_for('main.admin_feedback_view') }}"><i class="fas fa-comments"></i> Student Feedbacks</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.profile' %}active{% endif %}">
+          <a href="{{ url_for('main.profile') }}"><i class="fas fa-user-cog"></i> Profile</a>
+        </li>
+        {% else %}
+        <!-- Student Navigation: 15 Options -->
+        <li class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+          <a href="{{ url_for('main.dashboard') }}"><i class="fas fa-columns"></i> Dashboard</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.books' and not book_id %}active{% endif %}">
+          <a href="{{ url_for('main.books') }}"><i class="fas fa-search"></i> Search Books</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.book_detail' %}active{% endif %}">
+          <a href="{{ url_for('main.books') }}"><i class="fas fa-info-circle"></i> View Book Details</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.borrow_requests_view' %}active{% endif %}">
+          <a href="{{ url_for('main.borrow_requests_view') }}"><i class="fas fa-bookmark"></i> Borrow (Issue) Books</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.return_requests_view' %}active{% endif %}">
+          <a href="{{ url_for('main.return_requests_view') }}"><i class="fas fa-undo"></i> Return Books</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.renew_requests_view' %}active{% endif %}">
+          <a href="{{ url_for('main.renew_requests_view') }}"><i class="fas fa-sync-alt"></i> Renew Books</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.reserve_requests_view' %}active{% endif %}">
+          <a href="{{ url_for('main.reserve_requests_view') }}"><i class="fas fa-calendar-check"></i> Reserve Books</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.my_borrowed_books_view' %}active{% endif %}">
+          <a href="{{ url_for('main.my_borrowed_books_view') }}"><i class="fas fa-book-reader"></i> My Borrowed Books</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.history' %}active{% endif %}">
+          <a href="{{ url_for('main.history') }}"><i class="fas fa-history"></i> Borrow History</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.student_fines_view' %}active{% endif %}">
+          <a href="{{ url_for('main.student_fines_view') }}"><i class="fas fa-hand-holding-usd"></i> Fine Details</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.notifications' %}active{% endif %}">
+          <a href="{{ url_for('main.notifications') }}"><i class="fas fa-bell"></i> Notifications</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.profile' %}active{% endif %}">
+          <a href="{{ url_for('main.profile') }}"><i class="fas fa-user-cog"></i> Profile Management</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.receipts_view' %}active{% endif %}">
+          <a href="{{ url_for('main.receipts_view') }}"><i class="fas fa-file-invoice"></i> Download Receipt</a>
+        </li>
+        <li class="{% if request.endpoint == 'main.feedback_view' %}active{% endif %}">
+          <a href="{{ url_for('main.feedback_view') }}"><i class="fas fa-comments"></i> Feedback & Suggest</a>
+        </li>
+        <li class="">
+          <a href="{{ url_for('main.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </li>
+        {% endif %}
+        {% endif %}
+      </ul>
+
+      <div class="sidebar-footer">
+        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger w-100 border-0 text-start ps-3 py-2">
+          <i class="fas fa-sign-out-alt me-2"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Top Navbar -->
+      <nav class="top-navbar">
+        <div class="d-flex align-items-center">
+          <button class="btn btn-dark d-lg-none me-3" id="sidebarCollapse">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 class="page-title">
+            {% block page_title %}Dashboard{% endblock %}
+          </h1>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          {% if current_user.is_authenticated %}
+          <!-- Notifications Icon -->
+          <a href="{{ url_for('main.notifications') }}" class="btn btn-light position-relative p-2 rounded-circle"
+            style="width:40px; height:40px;">
+            <i class="fas fa-bell text-secondary"></i>
+            <span id="notif-badge-indicator" class="notif-badge-indicator" style="display: none;"></span>
+          </a>
+
+          <div class="d-flex flex-column text-end d-none d-sm-block">
+            <span class="fw-bold" style="font-size:0.95rem;">{{ current_user.full_name }}</span>
+            <span class="text-muted" style="font-size:0.75rem;">{{ current_user.user_type }}</span>
+          </div>
+          <a href="{{ url_for('main.profile') }}">
+            <img class="profile-avatar-circle"
+              src="{{ url_for('static', filename='images/' + (current_user.image or 'default-avatar.svg')) }}"
+              style="width:36px; height:36px; border-radius:12px; object-fit:cover; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255,255,255,0.08);"
+              alt="Avatar">
+          </a>
+          {% endif %}
+        </div>
+      </nav>
+
+      <!-- Content Area -->
+      <div class="container-fluid p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <script>
+          document.addEventListener('DOMContentLoaded', function () {
+            {% for category, message in messages %}
+            window.showAIToast("{{ message }}", "{{ category }}");
+            {% endfor %}
+          });
+        </script>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- JS Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+
+</html>

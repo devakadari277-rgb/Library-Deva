@@ -1,0 +1,571 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Library - Management System{% endblock %}
+
+{% block page_title %}
+  {% if current_user.is_admin %}
+    Admin Dashboard
+  {% else %}
+    Student Dashboard
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if current_user.is_admin %}
+  <!-- Admin Dashboard -->
+  <!-- Stats Cards Row 1 -->
+  <div class="row g-4 mb-4">
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-primary-grad">
+          <i class="fas fa-book"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-total-books">{{ total_books }}</h3>
+          <p>Total Books</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-success-grad">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-available-books">{{ available_books }}</h3>
+          <p>Available Books</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-secondary-grad">
+          <i class="fas fa-book-reader"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-total-issued">{{ total_issued }}</h3>
+          <p>Issued Books</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-info bg-opacity-75">
+          <i class="fas fa-history"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-total-returned">{{ total_returned }}</h3>
+          <p>Returned Books</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards Row 2 -->
+  <div class="row g-4 mb-4">
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-primary-grad bg-opacity-75">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-total-students">{{ total_students }}</h3>
+          <p>Total Students</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-danger-grad">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-overdue-books">{{ overdue_books }}</h3>
+          <p>Overdue Books</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-warning-grad">
+          <i class="fas fa-rupee-sign"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-total-fine">₹{{ "%.2f" | format(total_fine) }}</h3>
+          <p>Total Fines Paid</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-6 col-sm-4 col-xl-3">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-danger-grad bg-opacity-75">
+          <i class="fas fa-bell"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-pending-requests">{{ pending_requests }}</h3>
+          <p>Pending Requests</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card-glass p-4 h-100">
+        <h5 class="fw-bold mb-4"><i class="fas fa-chart-area me-2 text-primary"></i>Borrowing Activity Trend</h5>
+        <div style="height: 280px; position: relative;">
+          <canvas id="issuesReturnsChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card-glass p-4 h-100">
+        <h5 class="fw-bold mb-4"><i class="fas fa-chart-pie me-2 text-primary"></i>Category Distribution</h5>
+        <div style="height: 280px; position: relative; display: flex; justify-content: center;">
+          <canvas id="categoryDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Logs Row -->
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="card-glass p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="fw-bold m-0"><i class="fas fa-list-ul me-2 text-primary"></i>Recent Real-Time Student Activity</h5>
+          <a href="{{ url_for('main.logs_view') }}" class="btn btn-sm btn-outline-primary border-0 rounded-pill"><i class="fas fa-eye me-1"></i>View All Logs</a>
+        </div>
+        <ul class="list-group list-group-flush" id="live-activity-list">
+          {% for log in recent_activity %}
+            <li class="list-group-item d-flex justify-content-between align-items-start border-0 ps-0 mb-3" style="background: transparent;">
+              <div class="ms-2 me-auto">
+                <div class="fw-bold">
+                  {{ log.user_name }}
+                  <span class="badge {% if log.user_type == 'Admin' %}bg-danger-grad{% else %}bg-primary-grad{% endif %} ms-1" style="font-size:0.65rem;">{{ log.user_type }}</span>
+                </div>
+                <span style="font-size:0.9rem; color:#475569;">{{ log.action }}: {{ log.details }}</span>
+              </div>
+              <span class="text-muted" style="font-size:0.8rem;">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
+            </li>
+          {% else %}
+            <li class="text-muted py-3">No recent activities recorded.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  <!-- Student Dashboard -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-primary-grad">
+          <i class="fas fa-book-reader"></i>
+        </div>
+        <div class="stat-info">
+          <h3>{{ active_issues | length }}</h3>
+          <p>Books Checked Out</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-warning-grad">
+          <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-student-pending">{{ pending_requests_list | length }}</h3>
+          <p>Pending Requests</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card-glass p-3 h-100 stat-card">
+        <div class="stat-icon bg-danger-grad">
+          <i class="fas fa-rupee-sign"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="stat-student-fine">₹{{ "%.2f" | format(fine_due) }}</h3>
+          <p>Unpaid Fines Balance</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Active Issues List -->
+    <div class="col-lg-8">
+      <div class="card-glass p-4 h-100">
+        <h5 class="fw-bold mb-4"><i class="fas fa-book-open me-2 text-primary"></i>Books Currently Issued</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Cover</th>
+                <th>Book Details</th>
+                <th>Due Date</th>
+                <th>Fines</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for issue in active_issues %}
+                <tr>
+                  <td>
+                    <img src="{{ url_for('static', filename='images/' + issue.book.image) }}" class="book-cover-img" alt="cover">
+                  </td>
+                  <td>
+                    <div class="fw-bold">{{ issue.book.title }}</div>
+                    <small class="text-muted">by {{ issue.book.author }} | Copy: {{ issue.copy.copy_number }}</small>
+                  </td>
+                  <td>
+                    {% if issue.due_date < datetime.utcnow() %}
+                      <span class="badge badge-status badge-overdue">{{ issue.due_date.strftime('%Y-%m-%d') }} (Overdue)</span>
+                    {% else %}
+                      <span class="badge badge-status badge-issued">{{ issue.due_date.strftime('%Y-%m-%d') }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if issue.fine_amount > 0 %}
+                      <span class="text-danger fw-bold">₹{{ "%.2f" | format(issue.fine_amount) }}</span>
+                    {% else %}
+                      <span class="text-muted">₹0.00</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <div class="d-flex justify-content-end gap-2">
+                      <!-- Renew Button Form -->
+                      <form action="{{ url_for('main.student_request_renew', issue_id=issue.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill"><i class="fas fa-sync-alt me-1"></i>Renew</button>
+                      </form>
+                      
+                      <!-- Exchange Trigger -->
+                      <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="openExchangeModal({{ issue.id }}, '{{ issue.book.title }}')">
+                        <i class="fas fa-exchange-alt me-1"></i>Exchange
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">No books currently checked out. Search the catalog to borrow books!</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Pending Requests -->
+    <div class="col-lg-4">
+      <div class="card-glass p-4 h-100">
+        <h5 class="fw-bold mb-4"><i class="fas fa-tasks me-2 text-primary"></i>Pending Requests Status</h5>
+        <div class="list-group list-group-flush">
+          {% for req in pending_requests_list %}
+            <div class="list-group-item border-0 px-0 pb-3" style="background:transparent;">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="fw-bold mb-1">{{ req.book.title }}</h6>
+                  <small class="text-muted">Type: <strong>{{ req.request_type }}</strong> | Requested on {{ req.requested_date.strftime('%m-%d %H:%M') }}</small>
+                </div>
+                <span class="badge badge-status badge-pending">Pending</span>
+              </div>
+            </div>
+          {% else %}
+            <p class="text-muted text-center py-4">No pending requests.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Unpaid Fines Table -->
+    <div class="col-md-6">
+      <div class="card-glass p-4 h-100">
+        <h5 class="fw-bold mb-4"><i class="fas fa-hand-holding-usd me-2 text-primary"></i>Outstanding Fines & Overdues</h5>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Book Title</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set fine_count = namespace(value=0) %}
+              {% for issue in active_issues %}
+                {% if issue.fine_amount > 0 %}
+                  {% set fine_count.value = fine_count.value + 1 %}
+                  <tr>
+                    <td>{{ issue.book.title }}</td>
+                    <td class="text-danger fw-bold">₹{{ "%.2f" | format(issue.fine_amount) }}</td>
+                    <td>
+                      <!-- Get status from FineRecord -->
+                      {% set fine_rec = issue.fines | first %}
+                      {% if fine_rec %}
+                        {% if fine_rec.status == 'Pending Payment' %}
+                          <span class="badge badge-status badge-pending">Awaiting Verification</span>
+                        {% else %}
+                          <span class="badge badge-status badge-overdue">Unpaid</span>
+                        {% endif %}
+                      {% else %}
+                        <span class="badge badge-status badge-overdue">Unpaid</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      {% set fine_rec = issue.fines | first %}
+                      {% if not fine_rec or fine_rec.status == 'Unpaid' %}
+                        <form action="{{ url_for('main.student_pay_fine', fine_id=fine_rec.id if fine_rec else 0) }}" method="POST" class="d-inline">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" class="btn btn-sm btn-outline-success rounded-pill"><i class="fas fa-check me-1"></i>Pay Fine</button>
+                        </form>
+                      {% else %}
+                        <button class="btn btn-sm btn-light rounded-pill" disabled>Processing</button>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+              
+              <!-- Check for standalone fine records if return was processed but fine remains unpaid -->
+              {% for f in current_user.fines %}
+                {% if f.status != 'Paid' and f.issued_book.status == 'Returned' %}
+                  {% set fine_count.value = fine_count.value + 1 %}
+                  <tr>
+                    <td>{{ f.issued_book.book.title }} (Returned)</td>
+                    <td class="text-danger fw-bold">₹{{ "%.2f" | format(f.amount) }}</td>
+                    <td>
+                      {% if f.status == 'Pending Payment' %}
+                        <span class="badge badge-status badge-pending">Awaiting Verification</span>
+                      {% else %}
+                        <span class="badge badge-status badge-overdue">Unpaid</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      {% if f.status == 'Unpaid' %}
+                        <form action="{{ url_for('main.student_pay_fine', fine_id=f.id) }}" method="POST" class="d-inline">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" class="btn btn-sm btn-outline-success rounded-pill"><i class="fas fa-check me-1"></i>Pay Fine</button>
+                        </form>
+                      {% else %}
+                        <button class="btn btn-sm btn-light rounded-pill" disabled>Processing</button>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+
+              {% if fine_count.value == 0 %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">Great! You have no outstanding fines.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications & Reminders -->
+    <div class="col-md-6">
+      <div class="card-glass p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="fw-bold m-0"><i class="fas fa-bell me-2 text-primary"></i>Recent Reminders</h5>
+          <a href="{{ url_for('main.notifications') }}" class="btn btn-sm btn-outline-secondary border-0"><i class="fas fa-eye me-1"></i>All</a>
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for notif in notifications_list %}
+            <li class="list-group-item border-0 px-0 pb-3" style="background:transparent;">
+              <div class="d-flex justify-content-between">
+                <span class="fw-bold text-dark">{{ notif.title }}</span>
+                <small class="text-muted">{{ notif.created_at.strftime('%Y-%m-%d') }}</small>
+              </div>
+              <p class="m-0 text-secondary" style="font-size: 0.9rem;">{{ notif.message }}</p>
+            </li>
+          {% else %}
+            <p class="text-muted text-center py-4">No new notifications.</p>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exchange Modal -->
+  <div class="modal fade" id="exchangeModal" tabindex="-1" aria-labelledby="exchangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-glass border-0" style="background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(20px);">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="exchangeModalLabel">Request Book Exchange</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form action="{{ url_for('main.request_exchange') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="issued_book_id" id="modal_issued_book_id">
+          <div class="modal-body border-0">
+            <p>You are requesting to exchange your issued book: <strong id="modal_issued_book_title"></strong></p>
+            
+            <div class="mb-3">
+              <label for="new_book_id" class="form-label fw-bold">Select Book to Borrow in Exchange:</label>
+              <select name="new_book_id" id="new_book_id" class="form-select rounded-3" required>
+                <!-- Available books will be dynamically populated -->
+                <option value="">Select a book from catalog...</option>
+              </select>
+            </div>
+            
+            <div class="alert alert-info py-2" style="font-size:0.85rem;">
+              <i class="fas fa-info-circle me-1"></i>Exchanging a book will return the current copy and issue the new one automatically once approved by the Admin. Fines for overdue returned books still apply.
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary rounded-pill bg-primary-grad border-0 px-4">Submit Request</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if current_user.is_admin %}
+<script>
+  // Setup Chart JS
+  document.addEventListener('DOMContentLoaded', function () {
+    const issuesData = {{ monthly_issues | tojson }};
+    const returnsData = {{ monthly_returns | tojson }};
+    const categoryData = {{ category_data | tojson }};
+
+    const ctx1 = document.getElementById('issuesReturnsChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: issuesData.map(item => item.label),
+        datasets: [
+          {
+            label: 'Issues',
+            data: issuesData.map(item => item.count),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3
+          },
+          {
+            label: 'Returns',
+            data: returnsData.map(item => item.count),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { 
+            position: 'top',
+            labels: { color: '#cbd5e1' }
+          }
+        },
+        scales: {
+          y: { 
+            grid: { color: 'rgba(255, 255, 255, 0.08)' }, 
+            border: { dash: [5, 5] },
+            ticks: { color: '#cbd5e1' }
+          },
+          x: { 
+            grid: { display: false },
+            ticks: { color: '#cbd5e1' }
+          }
+        }
+      }
+    });
+
+    const ctx2 = document.getElementById('categoryDistributionChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: categoryData.map(item => item.label),
+        datasets: [{
+          data: categoryData.map(item => item.count),
+          backgroundColor: ['#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#64748b']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { 
+            position: 'right',
+            labels: { color: '#cbd5e1' }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% else %}
+<script>
+  // Exchange Modal Handler
+  async function openExchangeModal(issuedBookId, bookTitle) {
+    document.getElementById('modal_issued_book_id').value = issuedBookId;
+    document.getElementById('modal_issued_book_title').innerText = bookTitle;
+    
+    const select = document.getElementById('new_book_id');
+    // Clear dynamic options
+    select.innerHTML = '<option value="">Select a book from catalog...</option>';
+    
+    // Fetch available books
+    try {
+      const res = await fetch('/books'); // Wait, we can extract from DOM or fetch books. Let's do a fetch of books or simple api.
+      // Alternatively, let's inject available books directly from Python.
+      // Let's call standard fetch to get JSON, but wait, do we have a json endpoint for books?
+      // Yes, let's create a small endpoint in routes.py or fetch and parse DOM.
+      // Better yet: let's query the DB inside Python and dump it as JSON in this script! That is extremely easy!
+      const availableBooks = {{ current_user.query.join(Book, Book.id == Book.id).filter(Book.available_copies > 0).all() | tojson if false else [] }};
+      // Let's make an AJAX fetch to a new simple endpoint we will define `/api/books/available` or fetch directly!
+      // Let's fetch it via AJAX:
+      const resp = await fetch('/books?search='); // returns HTML, let's make an API endpoint for available books to keep it clean.
+      // Actually, we can fetch from a simple API endpoint `/api/books/available`! Let's write that route or fetch and parse.
+      // Let's fetch from `/api/books/available` which we will add to routes.py.
+      const apiRes = await fetch('/api/books/available');
+      const booksData = await apiRes.json();
+      if (booksData.success) {
+        booksData.books.forEach(b => {
+          if (b.title !== bookTitle) {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.innerText = `${b.title} by ${b.author} (Shelf: ${b.shelf})`;
+            select.appendChild(opt);
+          }
+        });
+      }
+      
+      const modal = new bootstrap.Modal(document.getElementById('exchangeModal'));
+      modal.show();
+    } catch (e) {
+      console.error(e);
+      alert("Error loading exchangeable books.");
+    }
+  }
+</script>
+{% endif %}
+{% endblock %}

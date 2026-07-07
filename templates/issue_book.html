@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Manual Issue - Library - Management System{% endblock %}
+
+{% block page_title %}Manual Book Issue{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card-glass p-4 mb-4">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <a href="{{ url_for('main.history') }}" class="btn btn-sm btn-light rounded-circle p-2" style="width:36px; height:36px;"><i class="fas fa-arrow-left"></i></a>
+        <h5 class="fw-bold m-0"><i class="fas fa-book-reader me-2 text-primary"></i>Manually Issue a Book</h5>
+      </div>
+      <p class="text-muted m-0 ms-5" style="font-size:0.875rem;">Directly create an issue record. This bypasses the student request queue and assigns a book copy immediately.</p>
+    </div>
+
+    <div class="card-glass p-4">
+      <form method="POST" action="{{ url_for('main.issue_book') }}">
+        {{ form.hidden_tag() }}
+        
+        <div class="mb-3">
+          {{ form.student.label(class_='form-label fw-bold') }}
+          {{ form.student(class_='form-select rounded-3') }}
+          {% for error in form.student.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        
+        <div class="mb-3">
+          {{ form.book.label(class_='form-label fw-bold') }}
+          {{ form.book(class_='form-select rounded-3') }}
+          {% for error in form.book.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        
+        <div class="mb-3">
+          {{ form.duration.label(class_='form-label fw-bold') }}
+          {{ form.duration(class_='form-control rounded-3') }}
+          <div class="form-text">Standard borrow duration is 14 days. Max limit is 60 days.</div>
+          {% for error in form.duration.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary bg-primary-grad border-0 rounded-pill py-2.5">
+            <i class="fas fa-hand-holding-usd me-1"></i>Issue Book Copy
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

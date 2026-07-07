@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Receipts - Library{% endblock %}
+
+{% block page_title %}Borrow & Issue Receipts{% endblock %}
+
+{% block content %}
+<!-- Header Card -->
+<div class="card-glass p-4 mb-4">
+  <h5 class="fw-bold m-0"><i class="fas fa-file-invoice me-2 text-primary"></i>My Transaction Receipts</h5>
+  <p class="text-muted m-0 mt-1" style="font-size:0.875rem;">Download or print official transaction borrow receipts for validation. Select any active or returned borrow record below.</p>
+</div>
+
+<!-- Receipts List Card -->
+<div class="card-glass p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Book Details</th>
+          <th>Copy Barcode</th>
+          <th>Issue Date</th>
+          <th>Return Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in issues %}
+          <tr>
+            <td>
+              <div class="fw-bold text-dark">{{ issue.book.title }}</div>
+              <small class="text-muted">by {{ issue.book.author }}</small>
+            </td>
+            <td class="font-monospace text-secondary" style="font-size:0.85rem;">{{ issue.copy.copy_number }}</td>
+            <td class="text-secondary" style="font-size:0.9rem;">{{ issue.issue_date.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if issue.status == 'Issued' %}
+                <span class="badge badge-status badge-issued">Currently Checked Out</span>
+              {% elif issue.status == 'Returned' %}
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fs-7 fw-bold">Returned</span>
+              {% else %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 fs-7 fw-bold">{{ issue.status }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('main.download_receipt', issue_id=issue.id) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill bg-primary-grad border-0 px-3">
+                <i class="fas fa-print me-1"></i>View & Print Receipt
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-5">
+              <i class="fas fa-file-invoice fa-2x mb-3 text-secondary"></i>
+              <h5>No borrow records found.</h5>
+              <p class="m-0">Issue books from the library catalog to generate receipts.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

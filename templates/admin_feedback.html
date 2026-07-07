@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Student Feedbacks - Library{% endblock %}
+
+{% block page_title %}Student Feedbacks & Suggestions{% endblock %}
+
+{% block content %}
+<!-- Header Card -->
+<div class="card-glass p-4 mb-4">
+  <h5 class="fw-bold m-0"><i class="fas fa-comments me-2 text-primary"></i>Student Feedbacks Dashboard</h5>
+  <p class="text-muted m-0 mt-1" style="font-size:0.875rem;">Monitor facility and service feedback, book requests/suggestions, and damage reports submitted by registered library members.</p>
+</div>
+
+<!-- Feedback Table Card -->
+<div class="card-glass p-4">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Feedback Type</th>
+          <th>Detailed Message</th>
+          <th>Submitted Date</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fb in feedbacks %}
+          <tr>
+            <td>
+              <div class="fw-bold text-dark">{{ fb.student.full_name }}</div>
+              <small class="text-muted"><i class="fas fa-id-card me-1"></i>Roll: {{ fb.student.roll_number }}</small>
+            </td>
+            <td>
+              <span class="badge {% if fb.feedback_type == 'Book Suggestion' %}bg-primary-grad{% elif fb.feedback_type == 'Report Damage' %}bg-danger-grad{% else %}bg-secondary-grad{% endif %} border-0 px-3 py-2 rounded-pill fw-bold">
+                {{ fb.feedback_type }}
+              </span>
+            </td>
+            <td class="text-secondary small text-wrap" style="max-width: 320px;">
+              {{ fb.message }}
+            </td>
+            <td class="text-muted" style="font-size: 0.85rem;">{{ fb.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="text-end">
+              <form action="{{ url_for('main.delete_feedback', feedback_id=fb.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to resolve/delete this feedback record?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                  <i class="fas fa-check-circle me-1"></i>Resolve / Dismiss
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-5">
+              <i class="fas fa-comments fa-2x mb-3 text-secondary"></i>
+              <h5>No feedback records in queue.</h5>
+              <p class="m-0">No suggestions or issues have been reported by library students.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

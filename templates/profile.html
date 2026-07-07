@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Library - Management System{% endblock %}
+
+{% block page_title %}Account Profile{% endblock %}
+
+{% block content %}
+<!-- Profile Banner -->
+<div class="profile-header-card shadow-sm">
+  <div class="position-relative d-inline-block shadow-sm" style="cursor: pointer; transition: transform 0.2s;" onclick="document.getElementById('profile-image-input').click();" title="Click to upload profile picture">
+    <img id="profile-avatar-preview" class="profile-avatar-circle" src="{{ url_for('static', filename='images/' + (current_user.image or 'default-avatar.svg')) }}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(255,255,255,0.08); transition: transform 0.2s, filter 0.2s;" alt="Avatar">
+    <div class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border: 2px solid #fff; font-size: 0.75rem; transform: translate(3px, 3px);">
+      <i class="fas fa-camera"></i>
+    </div>
+  </div>
+  <div>
+    <h3 class="fw-bold m-0">{{ current_user.full_name }}</h3>
+    <p class="m-0 {% if current_user.is_admin %}role-admin-badge{% else %}role-student-badge{% endif %} d-inline-block px-3 py-1 rounded-pill mt-2 fw-semibold" style="font-size: 0.8rem;">
+      Role: {{ current_user.user_type }}
+    </p>
+    {% if not current_user.is_admin %}
+      <span class="ms-2 font-monospace" style="font-size: 0.85rem; opacity:0.9;">Roll: {{ current_user.roll_number }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Form -->
+  <div class="col-lg-8">
+    <div class="card-glass p-4">
+      <h5 class="fw-bold mb-4"><i class="fas fa-user-edit me-2 text-primary"></i>Update Profile Details</h5>
+      
+      <form method="POST" action="{{ url_for('main.profile') }}" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        
+        <div class="row g-3">
+          <!-- Full Name -->
+          <div class="col-md-6">
+            {{ form.full_name.label(class_='form-label fw-bold') }}
+            {{ form.full_name(class_='form-control rounded-3', placeholder='Full name') }}
+            {% for error in form.full_name.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+          
+          <!-- Email -->
+          <div class="col-md-6">
+            {{ form.email.label(class_='form-label fw-bold') }}
+            {{ form.email(class_='form-control rounded-3', placeholder='Email Address') }}
+            {% for error in form.email.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Profile Picture Upload -->
+          <div class="col-12">
+            <label class="form-label fw-bold d-block">Profile Picture</label>
+            <div class="d-flex align-items-center gap-3">
+              <div class="position-relative d-inline-block" style="cursor: pointer;" onclick="document.getElementById('profile-image-input').click();" title="Click to upload profile picture">
+                <img id="profile-avatar-preview-form" src="{{ url_for('static', filename='images/' + (current_user.image or 'default-avatar.svg')) }}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255,255,255,0.08); transition: transform 0.2s, filter 0.2s;" alt="Avatar">
+                <div class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; border: 2px solid #fff; font-size: 0.65rem; transform: translate(3px, 3px);">
+                  <i class="fas fa-camera"></i>
+                </div>
+              </div>
+              <div>
+                <button type="button" class="btn btn-sm btn-outline-light" onclick="document.getElementById('profile-image-input').click();">Choose File</button>
+                <span class="text-muted ms-2" id="file-name-display" style="font-size:0.85rem;">No file chosen</span>
+                {{ form.image(id='profile-image-input', class_='d-none', onchange='previewImage(this)') }}
+              </div>
+            </div>
+            {% for error in form.image.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          {% if not current_user.is_admin %}
+            <!-- Roll Number -->
+            <div class="col-md-6">
+              {{ form.roll_number.label(class_='form-label fw-bold') }}
+              {{ form.roll_number(class_='form-control rounded-3', placeholder='Roll Number') }}
+              {% for error in form.roll_number.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Department -->
+            <div class="col-md-6">
+              {{ form.department.label(class_='form-label fw-bold') }}
+              {{ form.department(class_='form-control rounded-3', placeholder='e.g. Computer Science') }}
+              {% for error in form.department.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Phone -->
+            <div class="col-md-6">
+              {{ form.phone.label(class_='form-label fw-bold') }}
+              {{ form.phone(class_='form-control rounded-3', placeholder='Phone Number') }}
+              {% for error in form.phone.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Address -->
+            <div class="col-12">
+              {{ form.address.label(class_='form-label fw-bold') }}
+              {{ form.address(class_='form-control rounded-3', rows=3, placeholder='Residential Address') }}
+              {% for error in form.address.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="col-12 mt-4 pt-3 border-top">
+            <h6 class="fw-bold mb-3"><i class="fas fa-key me-2 text-primary"></i>Change Password</h6>
+          </div>
+
+          <!-- New Password -->
+          <div class="col-md-6">
+            {{ form.new_password.label(class_='form-label fw-bold') }}
+            {{ form.new_password(class_='form-control rounded-3', placeholder='Enter new password') }}
+            {% for error in form.new_password.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="col-md-6">
+            {{ form.confirm_password.label(class_='form-label fw-bold') }}
+            {{ form.confirm_password(class_='form-control rounded-3', placeholder='Confirm new password') }}
+            {% for error in form.confirm_password.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-primary bg-primary-grad border-0 rounded-pill py-2.5">
+            <i class="fas fa-save me-1"></i>Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Information Card -->
+  <div class="col-lg-4">
+    <div class="card-glass p-4">
+      <h5 class="fw-bold mb-3"><i class="fas fa-shield-alt me-2 text-primary"></i>Account Details</h5>
+      <ul class="list-group list-group-flush" style="font-size:0.9rem;">
+        <li class="list-group-item d-flex justify-content-between border-0 px-0 pb-3" style="background:transparent;">
+          <span class="text-secondary">Account Created</span>
+          <strong class="text-dark">{{ current_user.created_at.strftime('%Y-%m-%d') }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between border-0 px-0 pb-3" style="background:transparent;">
+          <span class="text-secondary">Account Status</span>
+          {% if current_user.is_admin %}
+            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill">Administrator</span>
+          {% elif current_user.is_blocked %}
+            <span class="badge bg-danger bg-opacity-10 text-danger fw-bold px-3 py-2 rounded-pill">Blocked</span>
+          {% else %}
+            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill">Active Student</span>
+          {% endif %}
+        </li>
+      </ul>
+      <div class="alert alert-info py-2 mt-3" style="font-size:0.8rem;">
+        <i class="fas fa-info-circle me-1"></i>To update institutional attributes (like roll number changes or unblocking requests), contact the library head directly.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  #profile-avatar-preview:hover,
+  #profile-avatar-preview-form:hover {
+    transform: scale(1.05);
+    filter: brightness(0.9);
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      const bannerPreview = document.getElementById('profile-avatar-preview');
+      const formPreview = document.getElementById('profile-avatar-preview-form');
+      if (bannerPreview) bannerPreview.src = e.target.result;
+      if (formPreview) formPreview.src = e.target.result;
+      
+      const fileLabel = document.getElementById('file-name-display');
+      if (fileLabel) fileLabel.textContent = input.files[0].name;
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}

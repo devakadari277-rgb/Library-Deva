@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Page </title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-on="false">
+
+  <div class="container">
+    <div class="lamp-wrapper">
+      <svg class="lamp-svg" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+        <ellipse class="inner-glow" cx="100" cy="110" rx="60" ry="30" />
+
+        <rect class="lamp-base" x="92" y="100" width="16" height="160" rx="8" />
+
+        <rect class="lamp-base" x="60" y="250" width="80" height="12" rx="6" />
+
+        <g class="pull-cord">
+          <line class="cord-line" x1="130" y1="110" x2="130" y2="180" />
+          <circle class="cord-bead" cx="130" cy="190" r="6" />
+          <circle class="cord-hit" cx="130" cy="190" r="25" fill="transparent" />
+        </g>
+
+        <path class="lamp-shade" d="M30 110 C 30 50, 170 50, 170 110 C 170 125, 30 125, 30 110 Z" />
+      </svg>
+    </div>
+
+    <div class="login-form">
+      <h2>Welcome</h2>
+
+      <form id="auth-form" onsubmit="return false;">
+        <div id="login-view">
+          <div class="form-group">
+            <label>Email</label>
+            <input id="login-email" name="email" type="email" placeholder="Enter email" required>
+          </div>
+
+          <div class="form-group">
+            <label>Password</label>
+            <input id="login-password" name="password" type="password" placeholder="Enter Password" required>
+          </div>
+
+          <div class="form-group">
+            <label>Account Type</label>
+            <select id="user-type" name="user_type">
+              <option value="Student">Student</option>
+              <option value="Admin">Admin</option>
+            </select>
+            <div id="register-view" style="display:none;">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input id="reg-fullname" name="full_name" type="text" placeholder="Full Name" required>
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input id="reg-email" name="email" type="email" placeholder="Email" required>
+              </div>
+              <div class="form-group">
+                <label>Account Type</label>
+                <select id="reg-user-type" name="user_type">
+                  <option value="Student">Student</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+              <div class="form-group" id="admin-code-group" style="display:none;">
+                <label>Admin Code</label>
+                <input id="reg-admin-code" name="admin_code" type="password" placeholder="Admin registration code">
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input id="reg-password" name="password" type="password" placeholder="Choose password" required>
+              </div>
+              <button id="register-btn" class="login-btn">Register</button>
+              <p style="text-align:center;margin-top:8px;color:#ccc">Already registered? <a href="#"
+                  id="show-login">Sign in</a></p>
+            </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3/dist/Draggable.min.js"></script>
+  <script src="script.js"></script>
+
+</body>
+
+</html>

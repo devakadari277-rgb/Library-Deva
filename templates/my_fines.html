@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Fine Details - Library{% endblock %}
+
+{% block page_title %}My Library Fines{% endblock %}
+
+{% block content %}
+<!-- Header Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="card-glass p-4 h-100 stat-card">
+      <div class="stat-icon bg-danger-grad">
+        <i class="fas fa-rupee-sign"></i>
+      </div>
+      <div class="stat-info">
+        <h3>₹{{ "%.2f" | format(fine_due) }}</h3>
+        <p class="m-0 text-muted">Total Outstanding Unpaid Fines</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card-glass p-4 h-100">
+      <h5 class="fw-bold mb-2 text-dark"><i class="fas fa-info-circle text-primary me-2"></i>Fine Payment Guidelines</h5>
+      <p class="text-secondary small m-0" style="line-height: 1.5;">To pay a fine, click on the **Pay Fine** button next to any unpaid fine. This submits a payment request to the library administrator. Please settle the amount directly with the librarian to receive verification.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Fines Log Card -->
+<div class="card-glass p-4">
+  <h5 class="fw-bold mb-4 text-dark"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Fine Records Log</h5>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Book Title</th>
+          <th>Copy Barcode</th>
+          <th>Fine Amount</th>
+          <th>Payment Status</th>
+          <th>Paid Date</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fine in fines %}
+          <tr>
+            <td class="fw-bold text-dark">{{ fine.issued_book.book.title }}</td>
+            <td class="font-monospace text-secondary" style="font-size:0.85rem;">{{ fine.issued_book.copy.copy_number }}</td>
+            <td class="fw-bold {% if fine.status == 'Paid' %}text-success{% else %}text-danger{% endif %}">₹{{ "%.2f" | format(fine.amount) }}</td>
+            <td>
+              {% if fine.status == 'Unpaid' %}
+                <span class="badge badge-status badge-overdue">Unpaid</span>
+              {% elif fine.status == 'Pending Payment' %}
+                <span class="badge badge-status badge-pending">Pending Verification</span>
+              {% else %}
+                <span class="badge badge-status badge-returned text-success">Paid</span>
+              {% endif %}
+            </td>
+            <td class="text-muted" style="font-size:0.85rem;">{{ fine.paid_date.strftime('%Y-%m-%d %H:%M') if fine.paid_date else 'N/A' }}</td>
+            <td class="text-end">
+              {% if fine.status == 'Unpaid' %}
+                <form action="{{ url_for('main.student_pay_fine', fine_id=fine.id) }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3"><i class="fas fa-credit-card me-1"></i>Pay Fine</button>
+                </form>
+              {% else %}
+                <span class="text-muted small">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="fas fa-hand-holding-usd fa-2x mb-3 text-secondary"></i>
+              <h5>No fine records found.</h5>
+              <p class="m-0">Great job! You have clean library accounts and no overdue fees.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

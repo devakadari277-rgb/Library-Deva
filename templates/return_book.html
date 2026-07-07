@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Return Book - Library - Management System{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+  <h3 class="mb-4">Return Book</h3>
+  <div class="mb-3">
+    <p><strong>Book:</strong> {{ issue.book.title }} by {{ issue.book.author }}</p>
+    <p><strong>Member:</strong> {{ issue.member.student_name }}</p>
+    <p><strong>Due Date:</strong> {{ issue.due_date.strftime('%Y-%m-%d') }}</p>
+  </div>
+  <form method="POST" action="{{ url_for('main.return_book', issue_id=issue.id) }}">
+    {{ form.hidden_tag() }}
+    <div class="d-grid">
+      {{ form.submit(class_='btn btn-success') }}
+    </div>
+  </form>
+</div>
+{% endblock %}

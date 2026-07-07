@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}System Reports - Library - Management System{% endblock %}
+
+{% block page_title %}Reports & Exports{% endblock %}
+
+{% block content %}
+<div class="card-glass p-4 mb-4 no-print">
+  <h5 class="fw-bold m-0"><i class="fas fa-file-invoice me-2 text-primary"></i>Generate and Export Reports</h5>
+  <p class="text-muted m-0 mt-1">Export tables to Excel (CSV format) or print beautifully formatted PDF summaries.</p>
+</div>
+
+<!-- Reports Grid -->
+<div class="row g-4 no-print">
+  <!-- Book Inventory Report -->
+  <div class="col-md-6 col-xl-3">
+    <div class="card-glass p-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="stat-icon bg-primary-grad mb-3">
+          <i class="fas fa-book"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Book Inventory</h5>
+        <p class="text-secondary small">Comprehensive log of book stock, ISBN references, categories, shelf locations, and copies status.</p>
+      </div>
+      <div class="d-grid gap-2 mt-4">
+        <a href="{{ url_for('main.export_report', report_type='books') }}" class="btn btn-sm btn-primary rounded-pill bg-primary-grad border-0">
+          <i class="fas fa-file-excel me-1"></i>Export Excel (CSV)
+        </a>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="triggerPrint('books')">
+          <i class="fas fa-print me-1"></i>Print/PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registered Students Report -->
+  <div class="col-md-6 col-xl-3">
+    <div class="card-glass p-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="stat-icon bg-success-grad mb-3">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Students Registry</h5>
+        <p class="text-secondary small">Full audit list of registered students, including contact details, departments, and active/blocked statuses.</p>
+      </div>
+      <div class="d-grid gap-2 mt-4">
+        <a href="{{ url_for('main.export_report', report_type='students') }}" class="btn btn-sm btn-success rounded-pill bg-success-grad border-0">
+          <i class="fas fa-file-excel me-1"></i>Export Excel (CSV)
+        </a>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="triggerPrint('students')">
+          <i class="fas fa-print me-1"></i>Print/PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fines & Overdues Report -->
+  <div class="col-md-6 col-xl-3">
+    <div class="card-glass p-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="stat-icon bg-danger-grad mb-3">
+          <i class="fas fa-hand-holding-usd"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Fines & Overdues</h5>
+        <p class="text-secondary small">Detailed overview of student outstanding fines, unpaid balances, overdue dates, and payment history.</p>
+      </div>
+      <div class="d-grid gap-2 mt-4">
+        <a href="{{ url_for('main.export_report', report_type='fines') }}" class="btn btn-sm btn-danger rounded-pill bg-danger-grad border-0">
+          <i class="fas fa-file-excel me-1"></i>Export Excel (CSV)
+        </a>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="triggerPrint('fines')">
+          <i class="fas fa-print me-1"></i>Print/PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction History Report -->
+  <div class="col-md-6 col-xl-3">
+    <div class="card-glass p-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="stat-icon bg-warning-grad mb-3">
+          <i class="fas fa-history"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Transactions Log</h5>
+        <p class="text-secondary small">Chronological ledger of issues, returns, renewals, and exchanges. Great for general audits.</p>
+      </div>
+      <div class="d-grid gap-2 mt-4">
+        <a href="{{ url_for('main.export_report', report_type='history') }}" class="btn btn-sm btn-warning text-white rounded-pill bg-warning-grad border-0">
+          <i class="fas fa-file-excel me-1"></i>Export Excel (CSV)
+        </a>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="triggerPrint('history')">
+          <i class="fas fa-print me-1"></i>Print/PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Print-Only Containers -->
+<div id="print-area" class="d-none d-print-block">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold text-uppercase">Library Hub - Academic Summary Report</h2>
+    <p class="text-muted">Generated on <span id="print-date"></span></p>
+    <hr style="border: 2px solid #000;">
+  </div>
+  <div id="print-content-target">
+    <!-- Loaded dynamically for printing -->
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function triggerPrint(type) {
+    document.getElementById('print-date').innerText = new Date().toLocaleString();
+    const target = document.getElementById('print-content-target');
+    target.innerHTML = `<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading report data...</p></div>`;
+    
+    // Create a printable table dynamically by fetching appropriate database metrics
+    let url = '';
+    if (type === 'books') url = '/books?search=';
+    else if (type === 'students') url = '/students?search=';
+    else if (type === 'fines') url = '/fines';
+    else if (type === 'history') url = '/history';
+    
+    fetch(url)
+      .then(res => res.text())
+      .then(html => {
+        // Parse HTML to extract the tables
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const table = doc.querySelector('table');
+        if (table) {
+          // Strip actions column
+          const rows = table.querySelectorAll('tr');
+          rows.forEach(row => {
+            const lastCell = row.cells[row.cells.length - 1];
+            if (lastCell && (lastCell.tagName === 'TH' && lastCell.innerText.toLowerCase().includes('action') || row.querySelector('form') || row.querySelector('button') || row.querySelector('.btn'))) {
+              lastCell.style.display = 'none';
+            }
+            // Strip inner action cells
+            const actionsCell = row.querySelector('td:last-child');
+            if (actionsCell && (actionsCell.querySelector('a') || actionsCell.querySelector('form') || actionsCell.querySelector('button'))) {
+              actionsCell.style.display = 'none';
+            }
+          });
+          
+          target.innerHTML = `
+            <h4 class="fw-bold mb-4 text-center text-capitalize">${type} Report Summary</h4>
+            <div class="table-responsive">${table.outerHTML}</div>
+          `;
+          setTimeout(() => { window.print(); }, 300);
+        } else {
+          target.innerHTML = `<p class="text-center text-danger">Failed to parse report table.</p>`;
+        }
+      })
+      .catch(err => {
+        target.innerHTML = `<p class="text-center text-danger">Error loading report contents: ${err}</p>`;
+      });
+  }
+</script>
+{% endblock %}

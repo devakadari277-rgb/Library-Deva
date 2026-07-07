@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Borrow Receipt - {{ issue.book.title }}</title>
+  <!-- Google Fonts: Outfit -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 40px 0;
+    }
+    .receipt-container {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      max-width: 650px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    .receipt-header {
+      border-bottom: 2px dashed #e2e8f0;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .receipt-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      margin-top: 40px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .barcode-placeholder {
+      font-family: 'Courier New', Courier, monospace;
+      letter-spacing: 4px;
+      font-size: 1.1rem;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      display: inline-block;
+      border-radius: 4px;
+      background: #f1f5f9;
+    }
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .receipt-container {
+        border: none;
+        box-shadow: none;
+        padding: 20px;
+        max-width: 100%;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container text-center mb-4 no-print">
+  <button class="btn btn-primary rounded-pill px-4" onclick="window.print()"><i class="fas fa-print me-2"></i>Print Receipt</button>
+  <button class="btn btn-outline-secondary rounded-pill px-4 ms-2" onclick="window.history.back()">Back</button>
+</div>
+
+<div class="receipt-container">
+  <div class="receipt-header text-center">
+    <h3 class="fw-bold m-0 text-primary">Library Management System</h3>
+    <p class="text-muted m-0 mt-1">Transaction Issue Borrow Receipt</p>
+    <div class="mt-3 text-secondary small">Receipt Generated: {{ datetime.utcnow().strftime('%Y-%m-%d %H:%M') }} UTC</div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-6">
+      <div class="text-muted small">ISSUED TO:</div>
+      <div class="fw-bold">{{ issue.student.full_name }}</div>
+      <div class="text-secondary small">Roll Number: {{ issue.student.roll_number }}</div>
+      <div class="text-secondary small">Dept: {{ issue.student.department }}</div>
+    </div>
+    <div class="col-6 text-end">
+      <div class="text-muted small">TRANSACTION DETAILS:</div>
+      <div class="fw-bold text-uppercase">Issue ID #{{ issue.id }}</div>
+      <div class="text-secondary small">Status: <strong class="text-success">{{ issue.status }}</strong></div>
+      <div class="text-secondary small">Fine Paid: ₹{{ "%.2f" | format(issue.fine_amount) }}</div>
+    </div>
+  </div>
+
+  <h5 class="fw-bold mb-3">Item Details</h5>
+  <table class="table align-middle">
+    <thead>
+      <tr class="table-light">
+        <th>Book Catalog Details</th>
+        <th class="text-end">Copy Barcode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="fw-bold">{{ issue.book.title }}</div>
+          <div class="text-secondary small">by {{ issue.book.author }}</div>
+          <div class="text-secondary small">ISBN: {{ issue.book.isbn }} | Shelf: {{ issue.book.shelf_number }}</div>
+        </td>
+        <td class="text-end font-monospace">{{ issue.copy.copy_number }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="row bg-light rounded-3 p-3 mb-4 mt-4 text-center g-2 font-monospace">
+    <div class="col-6 border-end">
+      <div class="text-muted small">ISSUE DATE</div>
+      <div class="fw-bold text-success">{{ issue.issue_date.strftime('%Y-%m-%d') }}</div>
+    </div>
+    <div class="col-6">
+      <div class="text-muted small">DUE DATE</div>
+      <div class="fw-bold text-danger">{{ issue.due_date.strftime('%Y-%m-%d') }}</div>
+    </div>
+  </div>
+
+  <div class="row align-items-center mt-5">
+    <div class="col-sm-6 text-center mb-3 mb-sm-0">
+      <svg id="barcode"></svg>
+      <div class="text-muted small mt-1">Transaction Barcode</div>
+    </div>
+    <div class="col-sm-6 text-center">
+      {% set qr_data = "Library Issue Receipt\nIssue ID: #" ~ issue.id ~ "\nStudent Name: " ~ issue.student.full_name ~ "\nRoll Number: " ~ issue.student.roll_number ~ "\nBook: " ~ issue.book.title ~ "\nCopy Number: " ~ issue.copy.copy_number ~ "\nIssue Date: " ~ issue.issue_date.strftime('%Y-%m-%d') ~ "\nDue Date: " ~ issue.due_date.strftime('%Y-%m-%d') ~ "\nStatus: " ~ issue.status %}
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ qr_data | urlencode }}" alt="QR Code" class="img-fluid rounded border p-2" style="background: white; max-width: 120px;">
+      <div class="text-muted small mt-1">Scan to Verify Full Details</div>
+    </div>
+  </div>
+
+  <div class="receipt-footer text-center">
+    <p class="m-0">Thank you for utilizing the Library Services!</p>
+    <p class="m-0 mt-1 small">Please renew or return the book on or before the due date to avoid fine penalties of ₹2.00 per day.</p>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    JsBarcode("#barcode", "LMS-ISS-{{ issue.id }}-{{ issue.copy.id }}", {
+      format: "CODE128",
+      width: 1.5,
+      height: 50,
+      displayValue: true,
+      fontSize: 12,
+      lineColor: "#1e293b"
+    });
+  });
+</script>
+</body>
+</html>
