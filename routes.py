@@ -46,6 +46,7 @@ from models import (
     Notification,
     ActivityLog,
     Category,
+    Feedback,
 )
 from utils import save_image, calculate_fine, update_outstanding_fines
 
