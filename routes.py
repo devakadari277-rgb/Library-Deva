@@ -225,32 +225,38 @@ def student_register():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     form = StudentRegistrationForm()
-    if form.validate_on_submit():
-        img_name = 'default-avatar.png'
-        if form.image.data:
-            img_saved = save_image(form.image.data)
-            if img_saved and img_saved != 'default-book.png':
-                img_name = img_saved
-        student = Student(
-            full_name=form.full_name.data,
-            email=form.email.data.lower(),
-            roll_number=form.roll_number.data.strip(),
-            department=form.department.data.strip(),
-            phone=form.phone.data.strip(),
-            address=form.address.data.strip(),
-            image=img_name
-        )
-        student.set_password(form.password.data)
-        db.session.add(student)
-        db.session.commit()
-        
-        # Logs
-        log_activity(student.get_id(), student.full_name, 'Student', 'Register', 'Self-registered student account')
-        create_notification(None, "New Student Registered", f"Student {student.full_name} ({student.roll_number}) registered.")
-        publish_sync_event('STUDENT_REGISTERED')
-        
-        flash('Registration successful. Please log in.', 'success')
-        return redirect(url_for('main.student_login'))
+    try:
+        if form.validate_on_submit():
+            img_name = 'default-avatar.png'
+            if form.image.data:
+                img_saved = save_image(form.image.data)
+                if img_saved and img_saved != 'default-book.png':
+                    img_name = img_saved
+            student = Student(
+                full_name=form.full_name.data,
+                email=form.email.data.lower(),
+                roll_number=form.roll_number.data.strip(),
+                department=form.department.data.strip(),
+                phone=form.phone.data.strip(),
+                address=form.address.data.strip(),
+                image=img_name
+            )
+            student.set_password(form.password.data)
+            db.session.add(student)
+            db.session.commit()
+            
+            # Logs
+            log_activity(student.get_id(), student.full_name, 'Student', 'Register', 'Self-registered student account')
+            create_notification(None, "New Student Registered", f"Student {student.full_name} ({student.roll_number}) registered.")
+            publish_sync_event('STUDENT_REGISTERED')
+            
+            flash('Registration successful. Please log in.', 'success')
+            return redirect(url_for('main.student_login'))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        flash(f'Server Error: {str(e)}', 'danger')
     return render_template('register.html', form=form, auth_type='Student')
 
 
@@ -259,24 +265,30 @@ def admin_register():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     form = AdminRegistrationForm()
-    if form.validate_on_submit():
-        img_name = 'default-avatar.png'
-        if form.image.data:
-            img_saved = save_image(form.image.data)
-            if img_saved and img_saved != 'default-book.png':
-                img_name = img_saved
-        admin = Admin(
-            full_name=form.full_name.data,
-            email=form.email.data.lower(),
-            image=img_name
-        )
-        admin.set_password(form.password.data)
-        db.session.add(admin)
-        db.session.commit()
-        
-        log_activity(admin.get_id(), admin.full_name, 'Admin', 'Register', 'Self-registered admin account')
-        flash('Admin registration successful. Please log in.', 'success')
-        return redirect(url_for('main.admin_login'))
+    try:
+        if form.validate_on_submit():
+            img_name = 'default-avatar.png'
+            if form.image.data:
+                img_saved = save_image(form.image.data)
+                if img_saved and img_saved != 'default-book.png':
+                    img_name = img_saved
+            admin = Admin(
+                full_name=form.full_name.data,
+                email=form.email.data.lower(),
+                image=img_name
+            )
+            admin.set_password(form.password.data)
+            db.session.add(admin)
+            db.session.commit()
+            
+            log_activity(admin.get_id(), admin.full_name, 'Admin', 'Register', 'Self-registered admin account')
+            flash('Admin registration successful. Please log in.', 'success')
+            return redirect(url_for('main.admin_login'))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        flash(f'Server Error: {str(e)}', 'danger')
     return render_template('register.html', form=form, auth_type='Admin')
 
 
@@ -285,80 +297,91 @@ def admin_register():
 @main.route('/api/login', methods=['POST'])
 @csrf.exempt
 def api_login():
-    data = request.get_json() or {}
-    email = data.get('email')
-    full_name = data.get('full_name')
-    password = data.get('password')
-    user_type = data.get('user_type', 'Student')
-    
-    identifier = email or full_name
-    if not identifier or not password:
-        return {'success': False, 'message': 'Missing credentials'}
+    try:
+        data = request.get_json() or {}
+        email = data.get('email')
+        full_name = data.get('full_name')
+        password = data.get('password')
+        user_type = data.get('user_type', 'Student')
         
-    user = None
-    if user_type == 'Admin':
-        user = Admin.query.filter(
-            (Admin.email == identifier.lower()) | (Admin.full_name == identifier)
-        ).first()
-    else:
-        user = Student.query.filter(
-            (Student.email == identifier.lower()) | (Student.full_name == identifier)
-        ).first()
-        
-    if user and user.check_password(password):
-        if user_type == 'Student' and user.is_blocked:
-            return {'success': False, 'message': 'Your account has been blocked.'}
-        login_user(user)
-        log_activity(user.get_id(), user.full_name, user_type, 'Login', 'API login successful')
-        return {'success': True}
-    return {'success': False, 'message': 'Invalid credentials'}
+        identifier = email or full_name
+        if not identifier or not password:
+            return {'success': False, 'message': 'Missing credentials'}
+            
+        user = None
+        if user_type == 'Admin':
+            user = Admin.query.filter(
+                (Admin.email == identifier.lower()) | (Admin.full_name == identifier)
+            ).first()
+        else:
+            user = Student.query.filter(
+                (Student.email == identifier.lower()) | (Student.full_name == identifier)
+            ).first()
+            
+        if user and user.check_password(password):
+            if user_type == 'Student' and user.is_blocked:
+                return {'success': False, 'message': 'Your account has been blocked.'}
+            login_user(user)
+            log_activity(user.get_id(), user.full_name, user_type, 'Login', 'API login successful')
+            return {'success': True}
+        return {'success': False, 'message': 'Invalid credentials'}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'message': f"Server Error: {str(e)}"}
 
 
 @main.route('/api/register', methods=['POST'])
 @csrf.exempt
 def api_register():
-    data = request.get_json() or {}
-    full_name = data.get('full_name')
-    email = data.get('email')
-    password = data.get('password')
-    user_type = data.get('user_type', 'Student')
-    
-    # Extra student fields can be sent, otherwise default
-    roll_number = data.get('roll_number') or f"R-{int(datetime.utcnow().timestamp())}"
-    department = data.get('department', 'General')
-    phone = data.get('phone', '0000000000')
-    address = data.get('address', '')
-    
-    if not all([full_name, email, password]):
-        return {'success': False, 'message': 'Missing required fields'}
+    try:
+        data = request.get_json() or {}
+        full_name = data.get('full_name')
+        email = data.get('email')
+        password = data.get('password')
+        user_type = data.get('user_type', 'Student')
         
-    if Student.query.filter_by(email=email.lower()).first() or Admin.query.filter_by(email=email.lower()).first():
-        return {'success': False, 'message': 'Email already registered'}
+        # Extra student fields can be sent, otherwise default
+        roll_number = data.get('roll_number') or f"R-{int(datetime.utcnow().timestamp())}"
+        department = data.get('department', 'General')
+        phone = data.get('phone', '0000000000')
+        address = data.get('address', '')
         
-    if user_type == 'Admin':
-        user = Admin(full_name=full_name, email=email.lower())
-    else:
-        if Student.query.filter_by(roll_number=roll_number).first():
-            return {'success': False, 'message': 'Roll number already registered'}
-        user = Student(
-            full_name=full_name,
-            email=email.lower(),
-            roll_number=roll_number,
-            department=department,
-            phone=phone,
-            address=address
-        )
+        if not all([full_name, email, password]):
+            return {'success': False, 'message': 'Missing required fields'}
+            
+        if Student.query.filter_by(email=email.lower()).first() or Admin.query.filter_by(email=email.lower()).first():
+            return {'success': False, 'message': 'Email already registered'}
+            
+        if user_type == 'Admin':
+            user = Admin(full_name=full_name, email=email.lower())
+        else:
+            if Student.query.filter_by(roll_number=roll_number).first():
+                return {'success': False, 'message': 'Roll number already registered'}
+            user = Student(
+                full_name=full_name,
+                email=email.lower(),
+                roll_number=roll_number,
+                department=department,
+                phone=phone,
+                address=address
+            )
+            
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
         
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-    
-    log_activity(user.get_id(), user.full_name, user_type, 'Register', 'API Registration successful')
-    if user_type == 'Student':
-        create_notification(None, "New Student Registered", f"Student {user.full_name} registered via API.")
-        publish_sync_event('STUDENT_REGISTERED')
-        
-    return {'success': True}
+        log_activity(user.get_id(), user.full_name, user_type, 'Register', 'API Registration successful')
+        if user_type == 'Student':
+            create_notification(None, "New Student Registered", f"Student {user.full_name} registered via API.")
+            publish_sync_event('STUDENT_REGISTERED')
+            
+        return {'success': True}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        return {'success': False, 'message': f"Server Error: {str(e)}"}
 
 
 @main.route('/logout')
