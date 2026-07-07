@@ -22,8 +22,9 @@ def create_app():
 
     with app.app_context():
         from models import (
-            Student, Admin, Category, Book, BookCopy, BookRequest, 
-            IssuedBook, ReturnedBook, FineRecord, Transaction, Notification, ActivityLog, Feedback
+            Student, Admin, Category, Book, BookCopy, BookRequest,
+            IssuedBook, ReturnedBook, FineRecord, Transaction,
+            Notification, ActivityLog, Feedback
         )
         db.create_all()
 
@@ -57,6 +58,14 @@ def create_app():
     return app
 
 
+# ============================
+# CREATE APP FOR VERCEL
+# ============================
+app = create_app()
+
+
+# ============================
+# RUN LOCALLY
+# ============================
 if __name__ == '__main__':
-    app = create_app()
     app.run(debug=True)
